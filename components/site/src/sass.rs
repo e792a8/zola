@@ -1,15 +1,56 @@
 use std::fs::create_dir_all;
 use std::path::{Path, PathBuf};
+use std::sync::{LazyLock, RwLock};
 
+use config::Config;
 use libs::globset::Glob;
-use libs::grass::{from_path as compile_file, Options, OutputStyle};
+use libs::grass_compiler::codemap::Span;
+use libs::grass_compiler::sass_value::{Brackets, ListSeparator, QuoteKind, SassMap};
+use libs::grass_compiler::{
+    from_path as compile_file,
+    sass_value::{ArgumentResult, SassNumber, Value},
+    Builtin, Options, OutputStyle, Result as SassResult, Visitor,
+};
+use libs::serde_json::{to_value, Value as JsonValue};
 use libs::walkdir::{DirEntry, WalkDir};
 
 use crate::anyhow;
 use errors::{bail, Result};
 use utils::fs::{create_directory, create_file};
 
-pub fn compile_sass(base_path: &Path, output_path: &Path) -> Result<()> {
+static CONFIG_VALUE: LazyLock<RwLock<JsonValue>> = LazyLock::new(|| RwLock::new(JsonValue::Null));
+
+fn map_value(j: &JsonValue, span: Span) -> Value {
+    match j {
+        JsonValue::String(x) => Value::String(x.to_owned(), QuoteKind::Quoted),
+        JsonValue::Bool(x) => Value::bool(*x),
+        JsonValue::Number(x) => Value::Dimension(SassNumber::new_unitless(x.as_f64().unwrap())),
+        JsonValue::Array(x) => Value::List(
+            x.iter().map(|v| map_value(v, span)).collect(),
+            ListSeparator::Comma,
+            Brackets::Bracketed,
+        ),
+        JsonValue::Object(m) => Value::Map(SassMap::new_with(
+            m.iter()
+                .map(|v| {
+                    (
+                        Value::String(v.0.to_owned(), QuoteKind::Quoted).span(span),
+                        map_value(v.1, span),
+                    )
+                })
+                .collect(),
+        )),
+        _ => Value::Null,
+    }
+}
+
+fn sass_get_config(args: ArgumentResult, _visitor: &mut Visitor) -> SassResult<Value> {
+    let span = args.span();
+
+    Ok(map_value(&CONFIG_VALUE.read().unwrap(), span))
+}
+
+pub fn compile_sass(base_path: &Path, output_path: &Path, config: &Config) -> Result<()> {
     create_directory(output_path)?;
 
     let sass_path = {
@@ -18,7 +59,12 @@ pub fn compile_sass(base_path: &Path, output_path: &Path) -> Result<()> {
         sass_path
     };
 
-    let options = Options::default().style(OutputStyle::Compressed);
+    *CONFIG_VALUE.write().unwrap() = to_value(config).unwrap();
+
+    let options = Options::default()
+        .style(OutputStyle::Compressed)
+        .add_custom_fn("zola-config", Builtin::new(sass_get_config));
+
     let files = get_non_partial_scss(&sass_path);
     let mut compiled_paths = Vec::new();
 

@@ -36,7 +36,7 @@ pub enum ExcludePaginatedPagesInSitemap {
     All,
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(default, deny_unknown_fields)]
 pub struct Config {
     /// Base URL of the site, the only required config argument

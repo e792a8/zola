@@ -617,7 +617,7 @@ pub fn serve(
         console::info(&msg);
         rebuild_done_handling(
             &broadcaster,
-            compile_sass(&site.base_path, &site.output_path),
+            compile_sass(&site.base_path, &site.output_path, &site.config),
             &site.sass_path.to_string_lossy(),
         );
     };
