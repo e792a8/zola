@@ -83,14 +83,6 @@ impl Site {
         if let Some(theme) = config.theme.clone() {
             // Grab data from the extra section of the theme
             config.merge_with_theme(path.join("themes").join(&theme).join("theme.toml"), &theme)?;
-        } else {
-            // If this site contains a `theme.toml` and `theme` is not configured, then
-            // we are building a demo site for this theme. We reuse the `extra` field
-            // so we do not have to write them again in `config.toml`.
-            let this_theme_path = path.join("theme.toml");
-            if this_theme_path.is_file() {
-                config.merge_with_theme(this_theme_path, "THIS")?;
-            }
         }
 
         let tera = load_tera(path, &config)?;
