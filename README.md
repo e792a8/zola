@@ -1,3 +1,11 @@
+# this fork of zola
+
+- get site config in sass files with `$cfg : zola-config();` [(preliminary discussions)](https://github.com/getzola/zola/pull/2242#issuecomment-2184041602)
+- ~~if `theme` is not set in `config.toml` and current site contains a `theme.toml`, reuse the `[extra]` field in it, avoids writing them again in `config.toml` when developing a theme~~
+  - reverted because setting `theme = ".."` does the same hack lol
+
+---
+
 # zola (né Gutenberg) <img src="docs/static/logos/Zola-logo-main-coffee.svg" align="right" alt="zola logo" width="30%"/>
 
 [![Build Status](https://dev.azure.com/getzola/zola/_apis/build/status/getzola.zola?branchName=master)](https://dev.azure.com/getzola/zola/_build/latest?definitionId=1&branchName=master)
