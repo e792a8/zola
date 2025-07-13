@@ -5697,6 +5697,7 @@ dependencies = [
  "clap 4.5.41",
  "clap_complete",
  "console 0.1.0",
+ "content",
  "ctrlc",
  "errors",
  "hyper 0.14.32",

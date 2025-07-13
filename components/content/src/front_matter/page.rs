@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use libs::tera::{Map, Value};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use time::format_description::well_known::Rfc3339;
 use time::macros::{format_description, time};
 use time::{Date, OffsetDateTime, PrimitiveDateTime};
@@ -12,7 +12,7 @@ use utils::de::{fix_toml_dates, from_unknown_datetime};
 use crate::front_matter::split::RawFrontMatter;
 
 /// The front matter of every page
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
 #[serde(default)]
 pub struct PageFrontMatter {
     /// <title> of the page
@@ -23,21 +23,22 @@ pub struct PageFrontMatter {
     #[serde(default, deserialize_with = "from_unknown_datetime")]
     pub updated: Option<String>,
     /// Datetime content was last updated
-    #[serde(default, skip_deserializing)]
+    #[serde(default, skip_deserializing, skip_serializing)]
     pub updated_datetime: Option<OffsetDateTime>,
     /// The converted update datetime into a (year, month, day) tuple
-    #[serde(default, skip_deserializing)]
+    #[serde(default, skip_deserializing, skip_serializing)]
     pub updated_datetime_tuple: Option<(i32, u8, u8)>,
     /// Date if we want to order pages (ie blog post)
     #[serde(default, deserialize_with = "from_unknown_datetime")]
     pub date: Option<String>,
     /// Datetime content was created
-    #[serde(default, skip_deserializing)]
+    #[serde(default, skip_deserializing, skip_serializing)]
     pub datetime: Option<OffsetDateTime>,
     /// The converted date into a (year, month, day) tuple
-    #[serde(default, skip_deserializing)]
+    #[serde(default, skip_deserializing, skip_serializing)]
     pub datetime_tuple: Option<(i32, u8, u8)>,
     /// Whether this page is a draft
+    #[serde(skip_serializing_if = "std::ops::Not::not")]
     pub draft: bool,
     /// Prevent generation of a folder for current page
     /// Defaults to `true`
@@ -50,10 +51,12 @@ pub struct PageFrontMatter {
     /// otherwise is set after parsing front matter and sections
     /// Can't be an empty string if present
     pub path: Option<String>,
+    #[serde(skip_serializing_if = "HashMap::is_empty")]
     pub taxonomies: HashMap<String, Vec<String>>,
     /// Integer to use to order content. Highest is at the bottom, lowest first
     pub weight: Option<usize>,
     /// The authors of the page.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
     pub authors: Vec<String>,
     /// All aliases for that page. Zola will create HTML templates that will
     /// redirect to this
@@ -67,6 +70,7 @@ pub struct PageFrontMatter {
     #[serde(skip_serializing)]
     pub in_search_index: bool,
     /// Any extra parameter present in the front matter
+    #[serde(skip_serializing_if = "Map::is_empty")]
     pub extra: Map<String, Value>,
 }
 

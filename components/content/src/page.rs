@@ -5,6 +5,7 @@ use std::path::{Path, PathBuf};
 use libs::once_cell::sync::Lazy;
 use libs::regex::Regex;
 use libs::tera::{Context as TeraContext, Tera};
+use libs::toml;
 
 use config::Config;
 use errors::{Context, Result};
@@ -100,7 +101,7 @@ impl Page {
         config: &Config,
         base_path: &Path,
     ) -> Result<Page> {
-        let (meta, content) = split_page_content(file_path, content)?;
+        let SplitPageContent { meta, content } = split_page_content(file_path, content)?;
         let mut page = Page::new(file_path, meta, base_path);
 
         page.lang =
@@ -292,6 +293,21 @@ impl Page {
 
     pub fn serialize_without_siblings<'a>(&'a self, library: &'a Library) -> SerializingPage<'a> {
         SerializingPage::new(self, Some(library), false)
+    }
+}
+
+/// A page simply split into front matter and content.
+pub struct SplitPageContent<'c> {
+    pub meta: PageFrontMatter,
+    pub content: &'c str,
+}
+
+impl SplitPageContent<'_> {
+    /// Export the page with TOML-format front matter.
+    pub fn export_to_string(&self) -> String {
+        let meta = toml::to_string(&self.meta).expect("Failed to serialize front matter to TOML");
+        let content = self.content;
+        format!("+++\n{meta}+++\n\n{content}")
     }
 }
 

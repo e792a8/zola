@@ -12,9 +12,9 @@ mod types;
 mod utils;
 
 pub use file_info::FileInfo;
-pub use front_matter::{PageFrontMatter, SectionFrontMatter};
+pub use front_matter::*;
 pub use library::Library;
-pub use page::Page;
+pub use page::{Page, SplitPageContent};
 pub use pagination::Paginator;
 pub use section::Section;
 pub use taxonomies::{Taxonomy, TaxonomyTerm};

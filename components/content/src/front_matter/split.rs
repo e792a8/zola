@@ -7,6 +7,7 @@ use libs::{serde_yaml, toml};
 
 use crate::front_matter::page::PageFrontMatter;
 use crate::front_matter::section::SectionFrontMatter;
+use crate::page::SplitPageContent;
 
 static TOML_RE: Lazy<Regex> = Lazy::new(|| {
     Regex::new(
@@ -86,15 +87,12 @@ pub fn split_section_content<'c>(
 
 /// Split a file between the front matter and its content
 /// Returns a parsed `PageFrontMatter` and the rest of the content
-pub fn split_page_content<'c>(
-    file_path: &Path,
-    content: &'c str,
-) -> Result<(PageFrontMatter, &'c str)> {
+pub fn split_page_content<'c>(file_path: &Path, content: &'c str) -> Result<SplitPageContent<'c>> {
     let (front_matter, content) = split_content(file_path, content)?;
     let meta = PageFrontMatter::parse(&front_matter).with_context(|| {
         format!("Error when parsing front matter of section `{}`", file_path.to_string_lossy())
     })?;
-    Ok((meta, content))
+    Ok(SplitPageContent { meta, content })
 }
 
 #[cfg(test)]
@@ -102,7 +100,7 @@ mod tests {
     use std::path::Path;
     use test_case::test_case;
 
-    use super::{split_page_content, split_section_content};
+    use super::{split_page_content, split_section_content, SplitPageContent};
 
     #[test_case(r#"
 +++
@@ -121,7 +119,8 @@ date: 2002-10-12
 Hello
 "#; "yaml")]
     fn can_split_page_content_valid(content: &str) {
-        let (front_matter, content) = split_page_content(Path::new(""), content).unwrap();
+        let SplitPageContent { meta: front_matter, content } =
+            split_page_content(Path::new(""), content).unwrap();
         assert_eq!(content, "Hello\n");
         assert_eq!(front_matter.title.unwrap(), "Title");
     }
@@ -171,7 +170,8 @@ description: hey there
 date: 2002-10-12
 ---"#; "yaml no newline")]
     fn can_split_content_with_only_frontmatter_valid(content: &str) {
-        let (front_matter, content) = split_page_content(Path::new(""), content).unwrap();
+        let SplitPageContent { meta: front_matter, content } =
+            split_page_content(Path::new(""), content).unwrap();
         assert_eq!(content, "");
         assert_eq!(front_matter.title.unwrap(), "Title");
     }
@@ -205,7 +205,8 @@ date: 2002-10-02T15:00:00Z
 ---
 ---"#, "---"; "yaml with minuses in content")]
     fn can_split_content_lazily(content: &str, expected: &str) {
-        let (front_matter, content) = split_page_content(Path::new(""), content).unwrap();
+        let SplitPageContent { meta: front_matter, content } =
+            split_page_content(Path::new(""), content).unwrap();
         assert_eq!(content, expected);
         assert_eq!(front_matter.title.unwrap(), "Title");
     }

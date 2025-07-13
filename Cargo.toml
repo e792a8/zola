@@ -19,6 +19,9 @@ time = "0.3"
 [[bin]]
 name = "zola"
 
+[lib]
+name = "zola"
+
 [dependencies]
 clap = { version = "4", features = ["derive"] }
 clap_complete = "4"
@@ -42,6 +45,7 @@ errors = { path = "components/errors" }
 console = { path = "components/console" }
 utils = { path = "components/utils" }
 libs = { path = "components/libs" }
+content = { path = "components/content" }
 
 
 [dev-dependencies]
